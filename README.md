@@ -1,1 +1,1 @@
-# javanazr
+# javanizr
