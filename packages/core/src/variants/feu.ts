@@ -29,7 +29,7 @@ const decodeSyllable = (syllable: string): string => {
 }
 
 export const feu: Variant = {
-  syllable: "f_",
+  syllable: "feu",
   label: "Langue de feu",
   encodeSyllable,
   decodeSyllable
