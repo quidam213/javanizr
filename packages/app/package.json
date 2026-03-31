@@ -10,6 +10,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@javanizr/core": "*",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~54.0.0",
     "expo-clipboard": "~8.0.8",
     "expo-router": "~6.0.23",

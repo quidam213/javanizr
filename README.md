@@ -8,6 +8,11 @@ Application mobile de traduction d'argots français codés — javanais classiqu
 - Encodage et décodage en langue de feu
 - Variantes personnalisées (syllabe libre)
 - Gestion des cas spéciaux : e muet, groupes de voyelles, sons composés, ponctuation
+- Historique persistant des opérations (AsyncStorage, 50 entrées max, dédupliqué)
+- Copie du résultat dans le presse-papier et partage natif
+- Thème sombre (style Discord) avec accent orange
+- Modal "À propos" avec liens vers Wikipédia et GitHub
+- Favicon flamme pour la version web
 
 ## 📁 Structure du projet
 ```

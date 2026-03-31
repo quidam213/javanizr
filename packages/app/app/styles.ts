@@ -147,4 +147,99 @@ export default StyleSheet.create({
     placeholder: {
         color: COLORS.placeholder,
     },
+
+    // Modal historique
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'flex-end',
+    },
+    modalSheet: {
+        backgroundColor: COLORS.surface,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        height: '70%',
+        paddingBottom: 24,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    modalTitle: {
+        color: COLORS.text,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    historyEmpty: {
+        color: COLORS.placeholder,
+        textAlign: 'center',
+        marginTop: 40,
+        fontSize: 14,
+    },
+    historyItem: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    historyMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 4,
+    },
+    historyVariant: {
+        color: COLORS.accent,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    historyMode: {
+        color: COLORS.textMuted,
+        fontSize: 12,
+    },
+    historyDeleteBtn: {
+        marginLeft: 'auto',
+    },
+    historyText: {
+        color: COLORS.text,
+        fontSize: 14,
+    },
+    historySeparator: {
+        height: 1,
+        backgroundColor: COLORS.border,
+        marginHorizontal: 16,
+    },
+
+    // Modal info
+    infoContent: {
+        padding: 16,
+        gap: 6,
+    },
+    infoSection: {
+        color: COLORS.accent,
+        fontSize: 15,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+        marginTop: 20,
+        marginBottom: 4,
+    },
+    infoText: {
+        color: COLORS.textMuted,
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    infoLink: {
+        color: COLORS.accent,
+        fontSize: 14,
+        marginTop: 4,
+    },
+    infoVersion: {
+        color: COLORS.placeholder,
+        fontSize: 12,
+        textAlign: 'center',
+        marginTop: 24,
+        marginBottom: 8,
+    },
 })

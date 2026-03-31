@@ -1,21 +1,39 @@
-import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Share, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, TextInput, TouchableOpacity, Share, KeyboardAvoidingView, Platform, ScrollView, Modal, FlatList, Linking } from 'react-native'
+import { useNavigation } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { encode, decode, getVariant } from '@javanizr/core'
 import styles from './styles'
 
 type Mode = 'encode' | 'decode'
 type VariantKey = 'av' | 'feu' | 'custom'
 
+type HistoryEntry = {
+    id: string
+    mode: Mode
+    variant: string
+    input: string
+    result: string
+    createdAt: number
+}
+
 const VARIANTS: VariantKey[] = ['av', 'feu', 'custom']
+const HISTORY_KEY = 'javanizr_history'
+const HISTORY_MAX = 50
 
 export default function TranslatorScreen() {
+    const navigation = useNavigation()
     const [input, setInput] = useState('')
     const [mode, setMode] = useState<Mode>('encode')
     const [variant, setVariant] = useState<VariantKey>('av')
     const [customSyllable, setCustomSyllable] = useState('')
     const [copied, setCopied] = useState(false)
+    const [history, setHistory] = useState<HistoryEntry[]>([])
+    const [showHistory, setShowHistory] = useState(false)
+    const [showInfo, setShowInfo] = useState(false)
+    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const syllable = variant === 'custom' ? customSyllable : variant
 
@@ -25,6 +43,57 @@ export default function TranslatorScreen() {
                 ? encode(input, syllable)
                 : decode(input, syllable)
             : ''
+
+    // Chargement de l'historique au démarrage
+    useEffect(() => {
+        AsyncStorage.getItem(HISTORY_KEY).then(raw => {
+            if (raw) setHistory(JSON.parse(raw))
+        })
+    }, [])
+
+    // Boutons historique + info dans le header
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', gap: 16, marginRight: 16 }}>
+                    <TouchableOpacity onPress={() => setShowHistory(true)}>
+                        <Ionicons name="book-outline" size={22} color="#949ba4" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowInfo(true)}>
+                        <Ionicons name="information-circle-outline" size={22} color="#949ba4" />
+                    </TouchableOpacity>
+                </View>
+            ),
+        })
+    }, [navigation])
+
+    // Sauvegarde avec debounce (1s après la dernière frappe)
+    useEffect(() => {
+        if (!result || !input) return
+        if (saveTimer.current) clearTimeout(saveTimer.current)
+        saveTimer.current = setTimeout(() => {
+            setHistory(prev => {
+                const entry: HistoryEntry = {
+                    id: Date.now().toString(),
+                    mode,
+                    variant: syllable,
+                    input,
+                    result,
+                    createdAt: Date.now(),
+                }
+                // Supprime les doublons (même input + variant + mode) puis ajoute en tête
+                const deduped = prev.filter(
+                    e => !(e.input === input && e.variant === syllable && e.mode === mode)
+                )
+                const updated = [entry, ...deduped].slice(0, HISTORY_MAX)
+                AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
+                return updated
+            })
+        }, 1000)
+        return () => {
+            if (saveTimer.current) clearTimeout(saveTimer.current)
+        }
+    }, [result, input, mode, syllable])
 
     const handleSwap = () => {
         setMode(m => (m === 'encode' ? 'decode' : 'encode'))
@@ -41,6 +110,38 @@ export default function TranslatorScreen() {
     const handleShare = async () => {
         if (!result) return
         await Share.share({ message: result })
+    }
+
+    const handleHistorySelect = (entry: HistoryEntry) => {
+        // Retire l'entrée de l'historique — elle sera re-sauvegardée proprement
+        const updated = history.filter(e => e.id !== entry.id)
+        setHistory(updated)
+        AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
+        setMode(entry.mode)
+        if (VARIANTS.includes(entry.variant as VariantKey)) {
+            setVariant(entry.variant as VariantKey)
+        } else {
+            setVariant('custom')
+            setCustomSyllable(entry.variant)
+        }
+        setInput(entry.input)
+        setShowHistory(false)
+    }
+
+    const handleHistoryDelete = (id: string) => {
+        const updated = history.filter(e => e.id !== id)
+        setHistory(updated)
+        AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
+    }
+
+    const handleHistoryClear = () => {
+        setHistory([])
+        AsyncStorage.removeItem(HISTORY_KEY)
+    }
+
+    const variantLabel = (v: string) => {
+        if (v === 'av' || v === 'feu') return getVariant(v).label
+        return `Custom · ${v}`
     }
 
     return (
@@ -158,6 +259,108 @@ export default function TranslatorScreen() {
                     </Text>
                 </View>
             </ScrollView>
+
+            {/* Modal historique */}
+            <Modal
+                visible={showHistory}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowHistory(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Historique</Text>
+                            <View style={styles.resultActions}>
+                                {history.length > 0 && (
+                                    <TouchableOpacity onPress={handleHistoryClear} style={styles.actionBtn}>
+                                        <Ionicons name="trash" size={20} color="#5c6370" />
+                                    </TouchableOpacity>
+                                )}
+                                <TouchableOpacity onPress={() => setShowHistory(false)} style={styles.actionBtn}>
+                                    <Ionicons name="close" size={22} color="#949ba4" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        {history.length === 0 ? (
+                            <Text style={styles.historyEmpty}>Aucun historique pour l'instant</Text>
+                        ) : (
+                            <FlatList
+                                data={history}
+                                keyExtractor={item => item.id}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={styles.historyItem}
+                                        onPress={() => handleHistorySelect(item)}
+                                    >
+                                        <View style={styles.historyMeta}>
+                                            <Text style={styles.historyVariant}>{variantLabel(item.variant)}</Text>
+                                            <Text style={styles.historyMode}>· {item.mode}</Text>
+                                            <TouchableOpacity
+                                                onPress={() => handleHistoryDelete(item.id)}
+                                                style={styles.historyDeleteBtn}
+                                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                            >
+                                                <Ionicons name="trash-outline" size={14} color="#5c6370" />
+                                            </TouchableOpacity>
+                                        </View>
+                                        <Text style={styles.historyText} numberOfLines={1}>
+                                            {item.input} → {item.result}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                                ItemSeparatorComponent={() => <View style={styles.historySeparator} />}
+                            />
+                        )}
+                    </View>
+                </View>
+            </Modal>
+            {/* Modal info */}
+            <Modal
+                visible={showInfo}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowInfo(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>À propos</Text>
+                            <TouchableOpacity onPress={() => setShowInfo(false)} style={styles.actionBtn}>
+                                <Ionicons name="close" size={22} color="#949ba4" />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView contentContainerStyle={styles.infoContent}>
+                            <Text style={styles.infoSection}>✦ Projet</Text>
+                            <Text style={styles.infoText}>
+                                Javanizr est un encodeur / décodeur d'argots français codés : javanais classique, langue de feu, et variantes personnalisées.
+                            </Text>
+                            <Text style={styles.infoText}>
+                                Fait pour le fun, pour tester jusqu'où Claude peut aller dans un projet from scratch.
+                            </Text>
+
+                            <Text style={styles.infoSection}>✦ Auteurs</Text>
+                            <Text style={styles.infoText}>dam (coucou)</Text>
+                            <Text style={styles.infoText}>Claude (Anthropic)</Text>
+
+                            <Text style={styles.infoSection}>✦ Le javanais</Text>
+                            <Text style={styles.infoText}>
+                                Argot verlan du XIXe siècle consistant à insérer une syllabe (av, oc, ul...) avant chaque voyelle des mots. Très populaire en France dans les années 70-80.
+                            </Text>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://fr.wikipedia.org/wiki/Javanais_(argot)')}>
+                                <Text style={styles.infoLink}>Lire l'article Wikipédia →</Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.infoSection}>✦ Liens</Text>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://github.com/quidam213/javanizr')}>
+                                <Text style={styles.infoLink}>GitHub — quidam213/javanizr →</Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.infoVersion}>v1.0.0</Text>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </KeyboardAvoidingView>
     )
 }

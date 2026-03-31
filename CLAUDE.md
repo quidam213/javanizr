@@ -11,14 +11,17 @@ Javanizr permet d'encoder et décoder du texte, de l'audio et des photos en argo
 ### Roadmap
 - [x] Core Engine — javanais, langue de feu, variante custom
 - [x] Tests unitaires (41 tests)
-- [ ] App Expo — UI mode texte
+- [x] App Expo — UI mode texte (thème sombre, copie, partage, swap encode/decode)
+- [x] Historique persistant (AsyncStorage, déduplication, suppression individuelle + bulk)
+- [x] Modal "À propos" (projet, auteurs, Wikipedia, GitHub)
+- [x] Favicon flamme orange pour la version web
 - [ ] Mode audio (TTS + STT)
 - [ ] Mode photo (OCR)
 - [ ] Monétisation (freemium ou open source, pas encore décidé)
 
 ### Idées bonus
 - Mode battle (deux utilisateurs s'envoient des messages en argot)
-- Historique et favoris
+- Favoris
 - Mode apprentissage
 - Partage social (WhatsApp, Instagram...)
 
@@ -64,7 +67,7 @@ bonjour + "og" → bogonjogoour
 | Monorepo | npm workspaces |
 | Langage core | TypeScript 5 |
 | Tests | Jest + ts-jest |
-| App mobile | React Native + Expo (à venir) |
+| App mobile | React Native + Expo |
 | Plateformes cibles | iOS + Android (+ Web plus tard) |
 
 ### Structure du projet
@@ -85,7 +88,13 @@ javanizr/
 │   │       ├── jav/
 │   │       ├── feu/
 │   │       └── personnalized/
-│   └── app/                   ← App Expo (pas encore commencé)
+│   └── app/                   ← App Expo (React Native)
+│       ├── app/
+│       │   ├── _layout.tsx    ← Header (titre + StatusBar)
+│       │   ├── index.tsx      ← Écran principal (encode/decode, historique, modals)
+│       │   └── styles.ts      ← Thème sombre centralisé (COLORS + StyleSheet)
+│       └── public/
+│           └── favicon.ico    ← Favicon flamme orange (web)
 ├── package.json               ← Monorepo npm workspaces
 ├── LICENSE
 └── README.md
