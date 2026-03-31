@@ -32,3 +32,6 @@ coverage/
 
 # Expo
 .expo/
+
+# Claude Code (config locale, ne pas commiter)
+.claude/settings.local.json
