@@ -16,7 +16,7 @@
         "url": "git+https://github.com/quidam213/javanizr.git"
     },
     "author": "dam",
-    "license": "ISC",
+    "license": "MIT",
     "bugs": {
         "url": "https://github.com/quidam213/javanizr/issues"
     },
