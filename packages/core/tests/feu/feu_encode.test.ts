@@ -1,29 +1,29 @@
 import { encode } from "../../src/index"
 
 test("consonne simple (b)", () => {
-  expect(encode("bonjour", "feu")).toBe("bonfonjourfour")
+    expect(encode("bonjour", "feu")).toBe("bonfonjourfour")
 })
 
 test("voyelle initiale (é)", () => {
-  expect(encode("école", "feu")).toBe("éfécolefole")
+    expect(encode("école", "feu")).toBe("éfécofolefe")
 })
 
 test("son composé (ch)", () => {
-  expect(encode("chat", "feu")).toBe("chatfat")
+    expect(encode("chat", "feu")).toBe("chatfat")
 })
 
 test("consonnes distinctes (tr)", () => {
-  expect(encode("trésor", "feu")).toBe("tréfrésorfor")
+    expect(encode("trésor", "feu")).toBe("tréfrésorfor")
 })
 
 test("consonnes distinctes (br)", () => {
-  expect(encode("bras", "feu")).toBe("brasfras")
+    expect(encode("bras", "feu")).toBe("brasfras")
 })
 
 test("consonnes distinctes (pl)", () => {
-  expect(encode("plage", "feu")).toBe("plageflage")
+    expect(encode("plage", "feu")).toBe("plaflagefe")
 })
 
 test("son composé (ph)", () => {
-  expect(encode("photo", "feu")).toBe("photofoto")
+    expect(encode("photo", "feu")).toBe("phofotofo")
 })

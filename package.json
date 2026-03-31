@@ -1,24 +1,24 @@
 {
-  "name": "javanizr",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/quidam213/javanizr.git"
-  },
-  "author": "dam",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/quidam213/javanizr/issues"
-  },
-  "homepage": "https://github.com/quidam213/javanizr#readme"
+    "name": "javanizr",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "test": "npm run test --workspaces --if-present",
+        "build": "npm run build --workspaces --if-present"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/quidam213/javanizr.git"
+    },
+    "author": "dam",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/quidam213/javanizr/issues"
+    },
+    "homepage": "https://github.com/quidam213/javanizr#readme"
 }
