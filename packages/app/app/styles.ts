@@ -195,6 +195,17 @@ export function getStyles(C: ThemeColors) {
         historyDeleteBtn: {
             marginLeft: 'auto',
         },
+        historyDate: {
+            color: C.placeholder,
+            fontSize: 11,
+            marginBottom: 2,
+        },
+        historyRowActions: {
+            marginLeft: 'auto',
+            flexDirection: 'row',
+            gap: 8,
+            alignItems: 'center',
+        },
         historyText: {
             color: C.text,
             fontSize: 14,

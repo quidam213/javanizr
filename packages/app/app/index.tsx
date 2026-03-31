@@ -23,8 +23,22 @@ type HistoryEntry = {
 
 const VARIANTS: VariantKey[] = ['av', 'feu', 'custom']
 const HISTORY_KEY = 'javanizr_history'
+const FAVORITES_KEY = 'javanizr_favorites'
 const THEME_KEY = 'javanizr_theme'
 const HISTORY_MAX = 50
+
+function formatDate(ts: number): string {
+    const d = new Date(ts)
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const hours = String(d.getHours()).padStart(2, '0')
+    const mins = String(d.getMinutes()).padStart(2, '0')
+    return `${day}/${month} à ${hours}:${mins}`
+}
+
+function entryKey(e: HistoryEntry) {
+    return `${e.input}|${e.variant}|${e.mode}`
+}
 
 export default function TranslatorScreen() {
     const navigation = useNavigation()
@@ -34,7 +48,9 @@ export default function TranslatorScreen() {
     const [customSyllable, setCustomSyllable] = useState('')
     const [copied, setCopied] = useState(false)
     const [history, setHistory] = useState<HistoryEntry[]>([])
+    const [favorites, setFavorites] = useState<HistoryEntry[]>([])
     const [showHistory, setShowHistory] = useState(false)
+    const [showFavorites, setShowFavorites] = useState(false)
     const [showInfo, setShowInfo] = useState(false)
     const [showTheme, setShowTheme] = useState(false)
     const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
@@ -46,6 +62,11 @@ export default function TranslatorScreen() {
     const colors = useMemo(() => getColors(themeMode, accentKey), [themeMode, accentKey])
     const styles = useMemo(() => getStyles(colors), [colors])
 
+    const favoriteKeys = useMemo(
+        () => new Set(favorites.map(entryKey)),
+        [favorites]
+    )
+
     const result =
         input && syllable
             ? mode === 'encode'
@@ -53,13 +74,17 @@ export default function TranslatorScreen() {
                 : decode(input, syllable)
             : ''
 
-    // Chargement historique + thème au démarrage
+    const isCurrentFavorite = favoriteKeys.has(`${input}|${syllable}|${mode}`) && !!result
+
+    // Chargement historique + favoris + thème au démarrage
     useEffect(() => {
         Promise.all([
             AsyncStorage.getItem(HISTORY_KEY),
+            AsyncStorage.getItem(FAVORITES_KEY),
             AsyncStorage.getItem(THEME_KEY),
-        ]).then(([rawHistory, rawTheme]) => {
+        ]).then(([rawHistory, rawFavorites, rawTheme]) => {
             if (rawHistory) setHistory(JSON.parse(rawHistory))
+            if (rawFavorites) setFavorites(JSON.parse(rawFavorites))
             if (rawTheme) {
                 const { mode: m, accent } = JSON.parse(rawTheme)
                 setThemeMode(m)
@@ -88,11 +113,14 @@ export default function TranslatorScreen() {
             ),
             headerRight: () => (
                 <View style={{ flexDirection: 'row', gap: 16, marginRight: 16 }}>
-                    <TouchableOpacity onPress={() => setShowTheme(true)}>
-                        <Ionicons name="color-palette-outline" size={22} color={colors.textMuted} />
+                    <TouchableOpacity onPress={() => setShowFavorites(true)}>
+                        <Ionicons name="star-outline" size={22} color={colors.textMuted} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setShowHistory(true)}>
                         <Ionicons name="book-outline" size={22} color={colors.textMuted} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowTheme(true)}>
+                        <Ionicons name="color-palette-outline" size={22} color={colors.textMuted} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setShowInfo(true)}>
                         <Ionicons name="information-circle-outline" size={22} color={colors.textMuted} />
@@ -172,10 +200,92 @@ export default function TranslatorScreen() {
         AsyncStorage.removeItem(HISTORY_KEY)
     }
 
+    const handleToggleFavorite = (entry: HistoryEntry) => {
+        const key = entryKey(entry)
+        setFavorites(prev => {
+            let updated: HistoryEntry[]
+            if (prev.some(f => entryKey(f) === key)) {
+                updated = prev.filter(f => entryKey(f) !== key)
+            } else {
+                updated = [{ ...entry, id: `fav_${Date.now()}`, createdAt: entry.createdAt }, ...prev]
+            }
+            AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated))
+            return updated
+        })
+    }
+
+    const handleFavoriteDelete = (id: string) => {
+        const updated = favorites.filter(f => f.id !== id)
+        setFavorites(updated)
+        AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated))
+    }
+
+    const handleFavoriteClear = () => {
+        setFavorites([])
+        AsyncStorage.removeItem(FAVORITES_KEY)
+    }
+
+    const handleToggleCurrentFavorite = () => {
+        if (!result) return
+        handleToggleFavorite({
+            id: Date.now().toString(),
+            mode,
+            variant: syllable,
+            input,
+            result,
+            createdAt: Date.now(),
+        })
+    }
+
+    const handleFavoriteSelect = (entry: HistoryEntry) => {
+        setMode(entry.mode)
+        if (VARIANTS.includes(entry.variant as VariantKey)) {
+            setVariant(entry.variant as VariantKey)
+        } else {
+            setVariant('custom')
+            setCustomSyllable(entry.variant)
+        }
+        setInput(entry.input)
+        setShowFavorites(false)
+    }
+
     const variantLabel = (v: string) => {
         if (v === 'av' || v === 'feu') return getVariant(v).label
         return `Custom · ${v}`
     }
+
+    const renderHistoryItem = (item: HistoryEntry, opts: { showStar: boolean; onSelect: () => void; onDelete: () => void }) => (
+        <TouchableOpacity style={styles.historyItem} onPress={opts.onSelect}>
+            <View style={styles.historyMeta}>
+                <Text style={styles.historyVariant}>{variantLabel(item.variant)}</Text>
+                <Text style={styles.historyMode}>· {item.mode}</Text>
+                <View style={styles.historyRowActions}>
+                    {opts.showStar && (
+                        <TouchableOpacity
+                            onPress={() => handleToggleFavorite(item)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <Ionicons
+                                name={favoriteKeys.has(entryKey(item)) ? 'star' : 'star-outline'}
+                                size={14}
+                                color={favoriteKeys.has(entryKey(item)) ? colors.accent : colors.placeholder}
+                            />
+                        </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                        onPress={opts.onDelete}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <Ionicons name="trash-outline" size={14} color={colors.placeholder} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+            <Text style={styles.historyDate}>{formatDate(item.createdAt)}</Text>
+            <Text style={styles.historyText} numberOfLines={1}>
+                {item.input} → {item.result}
+            </Text>
+        </TouchableOpacity>
+    )
 
     return (
         <>
@@ -263,14 +373,14 @@ export default function TranslatorScreen() {
                             </Text>
                             <View style={styles.resultActions}>
                                 <TouchableOpacity
-                                    onPress={handleShare}
+                                    onPress={handleToggleCurrentFavorite}
                                     disabled={!result}
                                     style={styles.actionBtn}
                                 >
                                     <Ionicons
-                                        name="share-social-outline"
+                                        name={isCurrentFavorite ? 'star' : 'star-outline'}
                                         size={18}
-                                        color={result ? colors.textMuted : colors.border}
+                                        color={result ? (isCurrentFavorite ? colors.accent : colors.textMuted) : colors.border}
                                     />
                                 </TouchableOpacity>
                                 <TouchableOpacity
@@ -282,6 +392,17 @@ export default function TranslatorScreen() {
                                         name={copied ? 'checkmark' : 'copy-outline'}
                                         size={18}
                                         color={result ? (copied ? '#4ade80' : colors.textMuted) : colors.border}
+                                    />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleShare}
+                                    disabled={!result}
+                                    style={styles.actionBtn}
+                                >
+                                    <Ionicons
+                                        name="share-social-outline"
+                                        size={18}
+                                        color={result ? colors.textMuted : colors.border}
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -323,27 +444,51 @@ export default function TranslatorScreen() {
                                 <FlatList
                                     data={history}
                                     keyExtractor={item => item.id}
-                                    renderItem={({ item }) => (
-                                        <TouchableOpacity
-                                            style={styles.historyItem}
-                                            onPress={() => handleHistorySelect(item)}
-                                        >
-                                            <View style={styles.historyMeta}>
-                                                <Text style={styles.historyVariant}>{variantLabel(item.variant)}</Text>
-                                                <Text style={styles.historyMode}>· {item.mode}</Text>
-                                                <TouchableOpacity
-                                                    onPress={() => handleHistoryDelete(item.id)}
-                                                    style={styles.historyDeleteBtn}
-                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                                >
-                                                    <Ionicons name="trash-outline" size={14} color={colors.placeholder} />
-                                                </TouchableOpacity>
-                                            </View>
-                                            <Text style={styles.historyText} numberOfLines={1}>
-                                                {item.input} → {item.result}
-                                            </Text>
+                                    renderItem={({ item }) => renderHistoryItem(item, {
+                                        showStar: true,
+                                        onSelect: () => handleHistorySelect(item),
+                                        onDelete: () => handleHistoryDelete(item.id),
+                                    })}
+                                    ItemSeparatorComponent={() => <View style={styles.historySeparator} />}
+                                />
+                            )}
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* Modal favoris */}
+                <Modal
+                    visible={showFavorites}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowFavorites(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalSheet}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>Favoris</Text>
+                                <View style={styles.resultActions}>
+                                    {favorites.length > 0 && (
+                                        <TouchableOpacity onPress={handleFavoriteClear} style={styles.actionBtn}>
+                                            <Ionicons name="trash" size={20} color={colors.placeholder} />
                                         </TouchableOpacity>
                                     )}
+                                    <TouchableOpacity onPress={() => setShowFavorites(false)} style={styles.actionBtn}>
+                                        <Ionicons name="close" size={22} color={colors.textMuted} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                            {favorites.length === 0 ? (
+                                <Text style={styles.historyEmpty}>Aucun favori pour l'instant</Text>
+                            ) : (
+                                <FlatList
+                                    data={favorites}
+                                    keyExtractor={item => item.id}
+                                    renderItem={({ item }) => renderHistoryItem(item, {
+                                        showStar: false,
+                                        onSelect: () => handleFavoriteSelect(item),
+                                        onDelete: () => handleFavoriteDelete(item.id),
+                                    })}
                                     ItemSeparatorComponent={() => <View style={styles.historySeparator} />}
                                 />
                             )}
