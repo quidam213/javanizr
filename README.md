@@ -56,4 +56,4 @@ decode("bogonjogoor", "og") // → "bonjour"
 
 ## 📄 Licence
 
-ISC
+MIT
