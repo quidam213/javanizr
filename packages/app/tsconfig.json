@@ -4,6 +4,9 @@
         "jsx": "react-native",
         "strict": true,
         "skipLibCheck": true,
+        "moduleResolution": "bundler",
+        "baseUrl": ".",
+        "typeRoots": ["./node_modules/@types"],
         "paths": {
             "@javanizr/core": ["../core/src/index.ts"]
         }

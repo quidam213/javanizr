@@ -9,7 +9,8 @@
     ],
     "overrides": {
         "react": "19.1.0",
-        "react-dom": "19.1.0"
+        "react-dom": "19.1.0",
+        "@types/react": "~19.1.0"
     },
     "scripts": {
         "test": "npm run test --workspaces --if-present",
@@ -24,5 +25,8 @@
     "bugs": {
         "url": "https://github.com/quidam213/javanizr/issues"
     },
-    "homepage": "https://github.com/quidam213/javanizr#readme"
+    "homepage": "https://github.com/quidam213/javanizr#readme",
+    "devDependencies": {
+        "@types/react": "~19.1.0"
+    }
 }
