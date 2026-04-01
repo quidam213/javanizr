@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Share, KeyboardAvoidingView, Platform, ScrollView, Modal, FlatList, Linking } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, Share, KeyboardAvoidingView, Platform, ScrollView, Modal, Linking } from 'react-native'
 import { useNavigation } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import * as Speech from 'expo-speech'
+import Slider from '@react-native-community/slider'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { encode, decode, getVariant } from '@javanizr/core'
-import { getStyles } from './styles'
-import { getColors, ACCENT_COLORS, type ThemeMode, type AccentKey } from './theme'
+import { getStyles } from '../lib/styles'
+import { getColors, ACCENT_COLORS, type ThemeMode, type AccentKey } from '../lib/theme'
 
 type Mode = 'encode' | 'decode'
 type VariantKey = 'av' | 'feu' | 'custom'
@@ -25,6 +27,7 @@ const VARIANTS: VariantKey[] = ['av', 'feu', 'custom']
 const HISTORY_KEY = 'javanizr_history'
 const FAVORITES_KEY = 'javanizr_favorites'
 const THEME_KEY = 'javanizr_theme'
+const VOICE_KEY = 'javanizr_voice'
 const HISTORY_MAX = 50
 
 function formatDate(ts: number): string {
@@ -53,8 +56,13 @@ export default function TranslatorScreen() {
     const [showFavorites, setShowFavorites] = useState(false)
     const [showInfo, setShowInfo] = useState(false)
     const [showTheme, setShowTheme] = useState(false)
+    const [showVoice, setShowVoice] = useState(false)
     const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
     const [accentKey, setAccentKey] = useState<AccentKey>('orange')
+    const [isSpeaking, setIsSpeaking] = useState(false)
+    const [availableVoices, setAvailableVoices] = useState<Speech.Voice[]>([])
+    const [selectedVoice, setSelectedVoice] = useState<string | undefined>(undefined)
+    const [voiceVolume, setVoiceVolume] = useState(1)
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const syllable = variant === 'custom' ? customSyllable : variant
@@ -82,7 +90,8 @@ export default function TranslatorScreen() {
             AsyncStorage.getItem(HISTORY_KEY),
             AsyncStorage.getItem(FAVORITES_KEY),
             AsyncStorage.getItem(THEME_KEY),
-        ]).then(([rawHistory, rawFavorites, rawTheme]) => {
+            AsyncStorage.getItem(VOICE_KEY),
+        ]).then(([rawHistory, rawFavorites, rawTheme, rawVoice]) => {
             if (rawHistory) setHistory(JSON.parse(rawHistory))
             if (rawFavorites) setFavorites(JSON.parse(rawFavorites))
             if (rawTheme) {
@@ -90,13 +99,36 @@ export default function TranslatorScreen() {
                 setThemeMode(m)
                 setAccentKey(accent)
             }
+            if (rawVoice) {
+                const { identifier, volume } = JSON.parse(rawVoice)
+                if (identifier) setSelectedVoice(identifier)
+                if (volume !== undefined) setVoiceVolume(volume)
+            }
         })
+    }, [])
+
+    // Chargement des voix disponibles
+    useEffect(() => {
+        Speech.getAvailableVoicesAsync()
+            .then(voices => setAvailableVoices(voices.filter(v => v.language.startsWith('fr'))))
+            .catch(() => {})
     }, [])
 
     // Persistance du thème
     useEffect(() => {
         AsyncStorage.setItem(THEME_KEY, JSON.stringify({ mode: themeMode, accent: accentKey }))
     }, [themeMode, accentKey])
+
+    // Persistance des préférences voix
+    useEffect(() => {
+        AsyncStorage.setItem(VOICE_KEY, JSON.stringify({ identifier: selectedVoice ?? null, volume: voiceVolume }))
+    }, [selectedVoice, voiceVolume])
+
+    // Arrêt de la lecture si le résultat change
+    useEffect(() => {
+        Speech.stop()
+        setIsSpeaking(false)
+    }, [result])
 
     // Header : titre + boutons + couleurs dynamiques
     useEffect(() => {
@@ -121,6 +153,9 @@ export default function TranslatorScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setShowTheme(true)}>
                         <Ionicons name="color-palette-outline" size={22} color={colors.textMuted} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowVoice(true)}>
+                        <Ionicons name="mic-outline" size={22} color={colors.textMuted} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setShowInfo(true)}>
                         <Ionicons name="information-circle-outline" size={22} color={colors.textMuted} />
@@ -172,6 +207,24 @@ export default function TranslatorScreen() {
     const handleShare = async () => {
         if (!result) return
         await Share.share({ message: result })
+    }
+
+    const handleSpeak = () => {
+        if (!result) return
+        Speech.speak(result, {
+            language: 'fr-FR',
+            voice: selectedVoice,
+            volume: voiceVolume,
+            onStart: () => setIsSpeaking(true),
+            onDone: () => setIsSpeaking(false),
+            onStopped: () => setIsSpeaking(false),
+            onError: () => setIsSpeaking(false),
+        })
+    }
+
+    const handleStopSpeech = () => {
+        Speech.stop()
+        setIsSpeaking(false)
     }
 
     const handleHistorySelect = (entry: HistoryEntry) => {
@@ -395,6 +448,17 @@ export default function TranslatorScreen() {
                                     />
                                 </TouchableOpacity>
                                 <TouchableOpacity
+                                    onPress={isSpeaking ? handleStopSpeech : handleSpeak}
+                                    disabled={!result}
+                                    style={styles.actionBtn}
+                                >
+                                    <Ionicons
+                                        name={isSpeaking ? 'stop-circle-outline' : 'volume-high-outline'}
+                                        size={18}
+                                        color={result ? colors.textMuted : colors.border}
+                                    />
+                                </TouchableOpacity>
+                                <TouchableOpacity
                                     onPress={handleShare}
                                     disabled={!result}
                                     style={styles.actionBtn}
@@ -441,16 +505,18 @@ export default function TranslatorScreen() {
                             {history.length === 0 ? (
                                 <Text style={styles.historyEmpty}>Aucun historique pour l'instant</Text>
                             ) : (
-                                <FlatList
-                                    data={history}
-                                    keyExtractor={item => item.id}
-                                    renderItem={({ item }) => renderHistoryItem(item, {
-                                        showStar: true,
-                                        onSelect: () => handleHistorySelect(item),
-                                        onDelete: () => handleHistoryDelete(item.id),
-                                    })}
-                                    ItemSeparatorComponent={() => <View style={styles.historySeparator} />}
-                                />
+                                <ScrollView>
+                                    {history.map((item, i) => (
+                                        <View key={item.id}>
+                                            {renderHistoryItem(item, {
+                                                showStar: true,
+                                                onSelect: () => handleHistorySelect(item),
+                                                onDelete: () => handleHistoryDelete(item.id),
+                                            })}
+                                            {i < history.length - 1 && <View style={styles.historySeparator} />}
+                                        </View>
+                                    ))}
+                                </ScrollView>
                             )}
                         </View>
                     </View>
@@ -481,16 +547,18 @@ export default function TranslatorScreen() {
                             {favorites.length === 0 ? (
                                 <Text style={styles.historyEmpty}>Aucun favori pour l'instant</Text>
                             ) : (
-                                <FlatList
-                                    data={favorites}
-                                    keyExtractor={item => item.id}
-                                    renderItem={({ item }) => renderHistoryItem(item, {
-                                        showStar: false,
-                                        onSelect: () => handleFavoriteSelect(item),
-                                        onDelete: () => handleFavoriteDelete(item.id),
-                                    })}
-                                    ItemSeparatorComponent={() => <View style={styles.historySeparator} />}
-                                />
+                                <ScrollView>
+                                    {favorites.map((item, i) => (
+                                        <View key={item.id}>
+                                            {renderHistoryItem(item, {
+                                                showStar: false,
+                                                onSelect: () => handleFavoriteSelect(item),
+                                                onDelete: () => handleFavoriteDelete(item.id),
+                                            })}
+                                            {i < favorites.length - 1 && <View style={styles.historySeparator} />}
+                                        </View>
+                                    ))}
+                                </ScrollView>
                             )}
                         </View>
                     </View>
@@ -538,6 +606,74 @@ export default function TranslatorScreen() {
                                 </TouchableOpacity>
 
                                 <Text style={styles.infoVersion}>v1.0.0</Text>
+                            </ScrollView>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* Modal voix */}
+                <Modal
+                    visible={showVoice}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowVoice(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.themeModalSheet}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>Voix</Text>
+                                <TouchableOpacity onPress={() => setShowVoice(false)} style={styles.actionBtn}>
+                                    <Ionicons name="close" size={22} color={colors.textMuted} />
+                                </TouchableOpacity>
+                            </View>
+                            <ScrollView contentContainerStyle={styles.themeContent}>
+                                <View>
+                                    <Text style={styles.themeLabel}>Voix disponibles</Text>
+                                    {availableVoices.length === 0 ? (
+                                        <Text style={styles.historyEmpty}>
+                                            Aucune voix française disponible sur cet appareil
+                                        </Text>
+                                    ) : (
+                                        availableVoices.map(voice => (
+                                            <TouchableOpacity
+                                                key={voice.identifier}
+                                                style={[styles.voiceItem, selectedVoice === voice.identifier && styles.voiceItemActive]}
+                                                onPress={() => {
+                                                    setSelectedVoice(voice.identifier)
+                                                    Speech.speak("Bonjour, c'est moi.", {
+                                                        language: 'fr-FR',
+                                                        voice: voice.identifier,
+                                                        volume: voiceVolume,
+                                                    })
+                                                }}
+                                            >
+                                                <Text style={[styles.voiceItemName, selectedVoice === voice.identifier && { color: colors.accent }]}>
+                                                    {voice.name}
+                                                </Text>
+                                                {selectedVoice === voice.identifier && (
+                                                    <Ionicons name="checkmark" size={16} color={colors.accent} />
+                                                )}
+                                            </TouchableOpacity>
+                                        ))
+                                    )}
+                                </View>
+                                <View>
+                                    <Text style={styles.themeLabel}>Volume</Text>
+                                    <View style={styles.volumeRow}>
+                                        <Ionicons name="volume-low-outline" size={20} color={colors.textMuted} />
+                                        <Slider
+                                            style={styles.volumeSlider}
+                                            minimumValue={0}
+                                            maximumValue={1}
+                                            value={voiceVolume}
+                                            onValueChange={setVoiceVolume}
+                                            minimumTrackTintColor={colors.accent}
+                                            maximumTrackTintColor={colors.border}
+                                            thumbTintColor={colors.accent}
+                                        />
+                                        <Ionicons name="volume-high-outline" size={20} color={colors.textMuted} />
+                                    </View>
+                                </View>
                             </ScrollView>
                         </View>
                     </View>

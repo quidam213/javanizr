@@ -253,6 +253,7 @@ export function getStyles(C: ThemeColors) {
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
             paddingBottom: 32,
+            maxHeight: '80%',
         },
         themeContent: {
             padding: 16,
@@ -308,6 +309,32 @@ export function getStyles(C: ThemeColors) {
         },
         accentDotActive: {
             borderColor: C.text,
+        },
+
+        // Modal voix
+        voiceItem: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: 12,
+            paddingHorizontal: 4,
+            borderRadius: 8,
+        },
+        voiceItemActive: {
+            backgroundColor: C.accent + '1a',
+        },
+        voiceItemName: {
+            fontSize: 14,
+            color: C.text,
+        },
+        volumeRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+        },
+        volumeSlider: {
+            flex: 1,
+            height: 40,
         },
     })
 }
