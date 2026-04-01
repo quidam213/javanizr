@@ -2,7 +2,40 @@
 
 Application mobile de traduction d'argots français codés — javanais classique, langue de feu, et variantes personnalisées.
 
-## 🧩 Fonctionnalités
+## Aperçu
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/01.png" width="160"/></td>
+    <td><img src="docs/screenshots/02.png" width="160"/></td>
+    <td><img src="docs/screenshots/03.png" width="160"/></td>
+    <td><img src="docs/screenshots/04.png" width="160"/></td>
+  </tr>
+  <tr>
+    <td align="center">Javanais classique</td>
+    <td align="center">Langue de feu</td>
+    <td align="center">Favoris</td>
+    <td align="center">Historique</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/05.png" width="160"/></td>
+    <td><img src="docs/screenshots/06.png" width="160"/></td>
+    <td><img src="docs/screenshots/07.png" width="160"/></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center">Thème</td>
+    <td align="center">Voix</td>
+    <td align="center">À propos</td>
+    <td></td>
+  </tr>
+</table>
+
+**Version web**
+
+![Vue web](docs/screenshots/08.png)
+
+## Fonctionnalités
 
 - Encodage et décodage en javanais classique (`av`)
 - Encodage et décodage en langue de feu
@@ -18,31 +51,50 @@ Application mobile de traduction d'argots français codés — javanais classiqu
 - Modal "À propos" avec liens vers Wikipédia et GitHub
 - Icône et favicon personnalisés (flamme)
 
-## 📁 Structure du projet
+## Structure du projet
 ```
 javanizr/
 ├── packages/
-│   ├── core/     ← Moteur d'encodage/décodage (TypeScript)
-│   └── app/      ← Application mobile (Expo)
-│       ├── app/  ← Écrans (Expo Router)
-│       ├── lib/  ← Thème et styles
+│   ├── core/          ← Moteur d'encodage/décodage (TypeScript)
+│   │   ├── src/
+│   │   └── tests/     ← 41 tests unitaires
+│   └── app/           ← Application mobile (Expo)
+│       ├── app/       ← Écrans (Expo Router)
+│       ├── lib/       ← Thème et styles dynamiques
 │       └── public/
-│           └── favicon.png  ← Icône app + favicon web
+│           └── favicon.png   ← Icône app + favicon web
+├── docs/
+│   ├── mobile_screenshots/
+│   └── privacy-policy.html
+└── README.md
 ```
 
-## 🚀 Installation
+## Installation
 ```bash
 git clone https://github.com/quidam213/javanizr.git
 cd javanizr
 npm install
 ```
 
-## 🧪 Tests
+## Tests
+
+41 tests unitaires couvrant les 3 variants, encodage et décodage :
+
+| Fichier | Couverture |
+|---|---|
+| `basics.test.ts` | Utilitaires : détection voyelles, e muet, groupes |
+| `jav/jav_encode.test.ts` | Encodage javanais classique |
+| `jav/jav_decode.test.ts` | Décodage javanais classique |
+| `feu/feu_encode.test.ts` | Encodage langue de feu |
+| `feu/feu_decode.test.ts` | Décodage langue de feu |
+| `personnalized/perso_encode.test.ts` | Encodage variante custom |
+| `personnalized/perso_decode.test.ts` | Décodage variante custom |
+
 ```bash
 npm test
 ```
 
-## 📖 Utilisation du Core
+## Utilisation du Core
 ```ts
 import { encode, decode } from "@javanizr/core"
 
@@ -59,53 +111,61 @@ encode("bonjour", "og")   // → "bogonjogour"
 decode("bogonjogoor", "og") // → "bonjour"
 ```
 
-## 📱 Lancer l'app (développement)
+## Lancer l'app
 
 ```bash
 cd packages/core && npm run build   # compiler le core (requis)
-cd ../app && npx expo start         # lancer Metro
 ```
 
-> Les modules natifs (TTS, STT, OCR) nécessitent un **dev build EAS** — ils ne fonctionnent pas dans Expo Go.
+### Web (Expo Go suffisant)
+```bash
+cd packages/app && npx expo start
+# appuie sur w pour ouvrir dans le navigateur
+```
+
+### Android / iOS (dev build requis)
+
+Les modules natifs TTS, STT et OCR ne fonctionnent pas dans Expo Go. Il faut un dev build EAS :
 
 ```bash
 cd packages/app
-eas build --profile development --platform android   # build APK dev
+eas build --profile development --platform android
+# installe l'APK sur ton appareil, puis :
+npx expo start
 ```
 
-## 🌐 Déploiement web
+## Déploiement web
 
 ```bash
 cd packages/app
-npx expo export -p web              # génère le dossier dist/
-npx serve dist/                     # test local
+npx expo export -p web    # génère dist/
 ```
 
-Hébergement recommandé : **Netlify** ou **Vercel** (drag & drop du dossier `dist/`).
+Dépose le dossier `dist/` sur **Netlify** ou **Vercel**.
 
-## 📦 Publication sur les stores
+## Publication sur les stores
 
 ### Google Play Store
 ```bash
-eas build --profile production --platform android   # génère un AAB signé
-eas submit --platform android                        # soumet à Google Play
+eas build --profile production --platform android
+eas submit --platform android
 ```
 Prérequis : compte Google Play Developer (25 $ une fois).
 
 ### Apple App Store
 ```bash
-eas build --profile production --platform ios        # génère un IPA signé
-eas submit --platform ios                            # soumet à App Store Connect
+eas build --profile production --platform ios
+eas submit --platform ios
 ```
 Prérequis : compte Apple Developer (99 $/an).
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Core Engine — encodage/décodage (41 tests)
 - [x] App mobile Expo — mode texte (javanais, langue de feu, variante custom)
 - [x] Mode audio — TTS (synthèse vocale) + STT (dictée vocale fr-FR)
 - [x] Mode photo — OCR via ML Kit (Android) / Vision (iOS)
 
-## 📄 Licence
+## Licence
 
 MIT

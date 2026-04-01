@@ -15,13 +15,11 @@ Javanizr permet d'encoder et décoder du texte, de l'audio et des photos en argo
 - [x] Historique persistant (AsyncStorage, déduplication, suppression individuelle + bulk)
 - [x] Modal "À propos" (projet, auteurs, Wikipedia, GitHub)
 - [x] Favicon flamme orange pour la version web
-- [ ] Mode audio (TTS + STT)
-- [ ] Mode photo (OCR)
-- [ ] Monétisation (freemium ou open source, pas encore décidé)
+- [x] Mode audio (TTS + STT)
+- [x] Mode photo (OCR)
 
 ### Idées bonus
 - Mode battle (deux utilisateurs s'envoient des messages en argot)
-- Favoris
 - Mode apprentissage
 - Partage social (WhatsApp, Instagram...)
 
@@ -68,7 +66,8 @@ bonjour + "og" → bogonjogoour
 | Langage core | TypeScript 5 |
 | Tests | Jest + ts-jest |
 | App mobile | React Native + Expo |
-| Plateformes cibles | iOS + Android (+ Web plus tard) |
+| Plateformes cibles | iOS + Android + Web |
+| Build natif | EAS Build (dev build requis pour TTS/STT/OCR) |
 
 ### Structure du projet
 ```
@@ -91,10 +90,12 @@ javanizr/
 │   └── app/                   ← App Expo (React Native)
 │       ├── app/
 │       │   ├── _layout.tsx    ← Header (titre + StatusBar)
-│       │   ├── index.tsx      ← Écran principal (encode/decode, historique, modals)
-│       │   └── styles.ts      ← Thème sombre centralisé (COLORS + StyleSheet)
+│       │   └── index.tsx      ← Écran principal (encode/decode, historique, modals)
+│       ├── lib/
+│       │   ├── theme.ts       ← Types ThemeMode/AccentKey, getColors(), ACCENT_COLORS
+│       │   └── styles.ts      ← getStyles(colors) styles 100% dynamiques
 │       └── public/
-│           └── favicon.ico    ← Favicon flamme orange (web)
+│           └── favicon.png    ← Icône app mobile + favicon web
 ├── package.json               ← Monorepo npm workspaces
 ├── LICENSE
 └── README.md
