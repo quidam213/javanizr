@@ -1,11 +1,35 @@
 {
-    "expo": {
-        "name": "Javanizr",
-        "slug": "javanizr",
-        "scheme": "javanizr",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "platforms": ["ios", "android", "web"],
-        "assetBundlePatterns": ["**/*"]
+  "expo": {
+    "name": "Javanizr",
+    "slug": "javanizr",
+    "scheme": "javanizr",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Javanizr utilise le microphone pour dicter du texte.",
+          "speechRecognitionPermission": "Javanizr utilise la reconnaissance vocale pour convertir ta voix en texte."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "dbb96c3b-b58c-4bc0-ac6e-5dd4dea215fd"
+      }
+    },
+    "owner": "damdamdeo",
+    "android": {
+      "package": "com.damdamdeo.javanizr"
     }
+  }
 }

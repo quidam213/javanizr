@@ -12,6 +12,8 @@ Application mobile de traduction d'argots français codés — javanais classiqu
 - Favoris persistants — étoile directement sur le résultat ou depuis l'historique
 - Copie du résultat dans le presse-papier et partage natif
 - Thème entièrement personnalisable : mode clair/sombre × 5 couleurs d'accent
+- Synthèse vocale (TTS) du résultat avec sélecteur de voix et slider volume
+- Dictée vocale (STT) en français pour saisir le texte à la voix
 - Modal "À propos" avec liens vers Wikipédia et GitHub
 - Favicon flamme pour la version web
 
@@ -65,7 +67,7 @@ Scanne le QR code avec Expo Go (Android/iOS) ou appuie sur `w` pour le navigateu
 
 - [x] Core Engine — encodage/décodage (41 tests)
 - [x] App mobile Expo — mode texte (javanais, langue de feu, variante custom)
-- [ ] Mode audio (TTS + STT)
+- [x] Mode audio — TTS (synthèse vocale) + STT (dictée vocale fr-FR)
 - [ ] Mode photo (OCR)
 - [ ] Monétisation (freemium ou open source, TBD)
 

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as Speech from 'expo-speech'
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition'
 import Slider from '@react-native-community/slider'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { encode, decode, getVariant } from '@javanizr/core'
@@ -60,6 +61,7 @@ export default function TranslatorScreen() {
     const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
     const [accentKey, setAccentKey] = useState<AccentKey>('orange')
     const [isSpeaking, setIsSpeaking] = useState(false)
+    const [isListening, setIsListening] = useState(false)
     const [availableVoices, setAvailableVoices] = useState<Speech.Voice[]>([])
     const [selectedVoice, setSelectedVoice] = useState<string | undefined>(undefined)
     const [voiceVolume, setVoiceVolume] = useState(1)
@@ -113,6 +115,14 @@ export default function TranslatorScreen() {
             .then(voices => setAvailableVoices(voices.filter(v => v.language.startsWith('fr'))))
             .catch(() => {})
     }, [])
+
+    // Événements STT
+    useSpeechRecognitionEvent('start', () => setIsListening(true))
+    useSpeechRecognitionEvent('end', () => setIsListening(false))
+    useSpeechRecognitionEvent('error', () => setIsListening(false))
+    useSpeechRecognitionEvent('result', (event) => {
+        if (event.results[0]?.transcript) setInput(event.results[0].transcript)
+    })
 
     // Persistance du thème
     useEffect(() => {
@@ -225,6 +235,15 @@ export default function TranslatorScreen() {
     const handleStopSpeech = () => {
         Speech.stop()
         setIsSpeaking(false)
+    }
+
+    const handleMicPress = async () => {
+        if (isListening) {
+            ExpoSpeechRecognitionModule.stop()
+        } else {
+            await ExpoSpeechRecognitionModule.requestPermissionsAsync()
+            ExpoSpeechRecognitionModule.start({ lang: 'fr-FR', interimResults: false })
+        }
     }
 
     const handleHistorySelect = (entry: HistoryEntry) => {
@@ -384,11 +403,20 @@ export default function TranslatorScreen() {
                             <Text style={styles.label}>
                                 {mode === 'encode' ? 'Texte original' : 'Texte encodé'}
                             </Text>
-                            {input.length > 0 && (
-                                <TouchableOpacity onPress={() => setInput('')} style={styles.clearBtn}>
-                                    <Ionicons name="close-circle" size={18} color={colors.placeholder} />
+                            <View style={styles.resultActions}>
+                                <TouchableOpacity onPress={handleMicPress} style={styles.clearBtn}>
+                                    <Ionicons
+                                        name={isListening ? 'mic' : 'mic-outline'}
+                                        size={18}
+                                        color={isListening ? colors.accent : colors.placeholder}
+                                    />
                                 </TouchableOpacity>
-                            )}
+                                {input.length > 0 && (
+                                    <TouchableOpacity onPress={() => setInput('')} style={styles.clearBtn}>
+                                        <Ionicons name="close-circle" size={18} color={colors.placeholder} />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
                         <TextInput
                             style={styles.input}
