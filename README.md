@@ -105,7 +105,6 @@ Prérequis : compte Apple Developer (99 $/an).
 - [x] App mobile Expo — mode texte (javanais, langue de feu, variante custom)
 - [x] Mode audio — TTS (synthèse vocale) + STT (dictée vocale fr-FR)
 - [x] Mode photo — OCR via ML Kit (Android) / Vision (iOS)
-- [ ] Monétisation (freemium ou open source, TBD)
 
 ## 📄 Licence
 
