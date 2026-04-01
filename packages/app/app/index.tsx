@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as Speech from 'expo-speech'
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition'
+import * as ImagePicker from 'expo-image-picker'
+import TextRecognition from '@react-native-ml-kit/text-recognition'
 import Slider from '@react-native-community/slider'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { encode, decode, getVariant } from '@javanizr/core'
@@ -62,6 +64,7 @@ export default function TranslatorScreen() {
     const [accentKey, setAccentKey] = useState<AccentKey>('orange')
     const [isSpeaking, setIsSpeaking] = useState(false)
     const [isListening, setIsListening] = useState(false)
+    const [isScanning, setIsScanning] = useState(false)
     const [availableVoices, setAvailableVoices] = useState<Speech.Voice[]>([])
     const [selectedVoice, setSelectedVoice] = useState<string | undefined>(undefined)
     const [voiceVolume, setVoiceVolume] = useState(1)
@@ -237,6 +240,21 @@ export default function TranslatorScreen() {
         setIsSpeaking(false)
     }
 
+    const handleCameraPress = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync()
+        if (status !== 'granted') return
+        const result = await ImagePicker.launchCameraAsync({ quality: 0.8 })
+        if (result.canceled) return
+        setIsScanning(true)
+        try {
+            const recognized = await TextRecognition.recognize(result.assets[0].uri)
+            const text = recognized.blocks.map(b => b.text).join(' ').trim()
+            if (text) setInput(text)
+        } finally {
+            setIsScanning(false)
+        }
+    }
+
     const handleMicPress = async () => {
         if (isListening) {
             ExpoSpeechRecognitionModule.stop()
@@ -404,6 +422,13 @@ export default function TranslatorScreen() {
                                 {mode === 'encode' ? 'Texte original' : 'Texte encodé'}
                             </Text>
                             <View style={styles.resultActions}>
+                                <TouchableOpacity onPress={handleCameraPress} disabled={isScanning} style={styles.clearBtn}>
+                                    <Ionicons
+                                        name={isScanning ? 'hourglass-outline' : 'camera-outline'}
+                                        size={18}
+                                        color={isScanning ? colors.accent : colors.placeholder}
+                                    />
+                                </TouchableOpacity>
                                 <TouchableOpacity onPress={handleMicPress} style={styles.clearBtn}>
                                     <Ionicons
                                         name={isListening ? 'mic' : 'mic-outline'}

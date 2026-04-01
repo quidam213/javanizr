@@ -20,6 +20,13 @@
           "microphonePermission": "Javanizr utilise le microphone pour dicter du texte.",
           "speechRecognitionPermission": "Javanizr utilise la reconnaissance vocale pour convertir ta voix en texte."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Javanizr utilise l'appareil photo pour lire du texte.",
+          "microphonePermission": false
+        }
       ]
     ],
     "extra": {
