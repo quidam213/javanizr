@@ -14,8 +14,9 @@ Application mobile de traduction d'argots français codés — javanais classiqu
 - Thème entièrement personnalisable : mode clair/sombre × 5 couleurs d'accent
 - Synthèse vocale (TTS) du résultat avec sélecteur de voix et slider volume
 - Dictée vocale (STT) en français pour saisir le texte à la voix
+- Reconnaissance de texte par photo (OCR) via ML Kit (Android) / Vision (iOS)
 - Modal "À propos" avec liens vers Wikipédia et GitHub
-- Favicon flamme pour la version web
+- Icône et favicon personnalisés (flamme)
 
 ## 📁 Structure du projet
 ```
@@ -23,6 +24,10 @@ javanizr/
 ├── packages/
 │   ├── core/     ← Moteur d'encodage/décodage (TypeScript)
 │   └── app/      ← Application mobile (Expo)
+│       ├── app/  ← Écrans (Expo Router)
+│       ├── lib/  ← Thème et styles
+│       └── public/
+│           └── favicon.png  ← Icône app + favicon web
 ```
 
 ## 🚀 Installation
@@ -54,21 +59,52 @@ encode("bonjour", "og")   // → "bogonjogour"
 decode("bogonjogoor", "og") // → "bonjour"
 ```
 
-## 📱 Lancer l'app
+## 📱 Lancer l'app (développement)
 
 ```bash
 cd packages/core && npm run build   # compiler le core (requis)
 cd ../app && npx expo start         # lancer Metro
 ```
 
-Scanne le QR code avec Expo Go (Android/iOS) ou appuie sur `w` pour le navigateur.
+> Les modules natifs (TTS, STT, OCR) nécessitent un **dev build EAS** — ils ne fonctionnent pas dans Expo Go.
+
+```bash
+cd packages/app
+eas build --profile development --platform android   # build APK dev
+```
+
+## 🌐 Déploiement web
+
+```bash
+cd packages/app
+npx expo export -p web              # génère le dossier dist/
+npx serve dist/                     # test local
+```
+
+Hébergement recommandé : **Netlify** ou **Vercel** (drag & drop du dossier `dist/`).
+
+## 📦 Publication sur les stores
+
+### Google Play Store
+```bash
+eas build --profile production --platform android   # génère un AAB signé
+eas submit --platform android                        # soumet à Google Play
+```
+Prérequis : compte Google Play Developer (25 $ une fois).
+
+### Apple App Store
+```bash
+eas build --profile production --platform ios        # génère un IPA signé
+eas submit --platform ios                            # soumet à App Store Connect
+```
+Prérequis : compte Apple Developer (99 $/an).
 
 ## 🗺️ Roadmap
 
 - [x] Core Engine — encodage/décodage (41 tests)
 - [x] App mobile Expo — mode texte (javanais, langue de feu, variante custom)
 - [x] Mode audio — TTS (synthèse vocale) + STT (dictée vocale fr-FR)
-- [ ] Mode photo (OCR)
+- [x] Mode photo — OCR via ML Kit (Android) / Vision (iOS)
 - [ ] Monétisation (freemium ou open source, TBD)
 
 ## 📄 Licence
