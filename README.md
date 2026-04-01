@@ -134,37 +134,16 @@ eas build --profile development --platform android
 npx expo start
 ```
 
-## Déploiement web
-
-```bash
-cd packages/app
-npx expo export -p web    # génère dist/
-```
-
-Dépose le dossier `dist/` sur **Netlify** ou **Vercel**.
-
-## Publication sur les stores
-
-### Google Play Store
-```bash
-eas build --profile production --platform android
-eas submit --platform android
-```
-Prérequis : compte Google Play Developer (25 $ une fois).
-
-### Apple App Store
-```bash
-eas build --profile production --platform ios
-eas submit --platform ios
-```
-Prérequis : compte Apple Developer (99 $/an).
-
 ## Roadmap
 
 - [x] Core Engine — encodage/décodage (41 tests)
 - [x] App mobile Expo — mode texte (javanais, langue de feu, variante custom)
 - [x] Mode audio — TTS (synthèse vocale) + STT (dictée vocale fr-FR)
 - [x] Mode photo — OCR via ML Kit (Android) / Vision (iOS)
+
+## Note
+
+Ce projet a également servi à expérimenter [Claude Code](https://claude.ai/code), l'outil de développement d'Anthropic — pour évaluer ses compétences et ses limites sur un projet mobile concret from scratch.
 
 ## Licence
 
